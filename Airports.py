@@ -3,14 +3,18 @@ import json
 from bs4 import BeautifulSoup
 
 
-def get_all_ICAO():
+def get_airport_data():
+    # get ICAO, status, city, state and country for each airport
+    # and saves the data to a json file
+
+    json_file = "Airport_details.json"
+
     base_url = "https://airportnavfinder.com/index.php?op=airportlist&page="
     page = int(0)
     dictionary = {}
+    # loop over all pages
     for i in range(690):
         page += 1
-        if (page % 25) == 0:
-            print(page)
         url = base_url + str(page)
         side = requests.get(
             url,
@@ -20,15 +24,18 @@ def get_all_ICAO():
         )
         soup = BeautifulSoup(side.content, "html.parser")
         table = soup.find_all("div", attrs={"class": "aplist-row"})
-        # print(table)
+
+        # loop over all rows in table
         for i in table:
             ICAO = i.find("a", href=True).text
             status = i.find("div", attrs={"class": "aplist-name"}).text
             city_state = i.find("div", attrs={"class": "aplist-lo"}).text
-            city, *state = city_state.split(",")
+            city, *state = city_state.split(
+                ","
+            )  # state will be a list and will be empty if no state is available
             country = i.find("div", attrs={"class": "aplist-co"}).text
 
-            # add to dictionary
+            # create sub dictionary
             sub_dict = {}
             sub_dict["ICAO"] = ICAO
             sub_dict["status"] = status
@@ -36,13 +43,11 @@ def get_all_ICAO():
             sub_dict["state"] = state
             sub_dict["country"] = country
 
+            # add to dictionary
             dictionary[ICAO] = sub_dict
 
-    # write to json
-    with open("Airport_details.json", "w") as f:
+    # write dictionary to json
+    with open(json_file, "w") as f:
         json.dump(dictionary, f)
 
     return dictionary
-
-
-get_all_ICAO()
